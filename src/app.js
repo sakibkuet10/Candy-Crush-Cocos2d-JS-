@@ -113,6 +113,9 @@ var HelloWorldLayer = cc.Layer.extend({
 
 var sprite1, sprite2;
 
+var pickedRow;
+var pickedCol;
+
 var touchListener = cc.EventListener.create({
     event: cc.EventListener.MOUSE,
 
@@ -139,15 +142,33 @@ var touchListener = cc.EventListener.create({
     swapCandyAnimation: function(){
         cc.log("swapCandyAnimation");
 
-        var seq1 = new cc.MoveBy.create(0.5, cc.p(visitedTiles[1].col*tileSize - visitedTiles[0].col*tileSize, visitedTiles[1].row*tileSize - visitedTiles[0].row*tileSize))
-        var seq2 = new cc.FadeOut.create(0.1);
-        var actionMove = new cc.Sequence.create(seq1, seq2);
+        var sprite1 = tileArray[visitedTiles[0].row][visitedTiles[0].col];
+        var sprite2 = tileArray[visitedTiles[1].row][visitedTiles[1].col];
+
+        var actionMove = new cc.MoveBy.create(0.5, cc.p(visitedTiles[1].col*tileSize - visitedTiles[0].col*tileSize, visitedTiles[1].row*tileSize - visitedTiles[0].row*tileSize))
         tileArray[visitedTiles[0].row][visitedTiles[0].col].runAction(actionMove);
 
-        var seq1 = new cc.MoveBy.create(0.5, cc.p(visitedTiles[0].col*tileSize - visitedTiles[1].col*tileSize, visitedTiles[0].row*tileSize - visitedTiles[1].row*tileSize));
-        var seq2 = new cc.FadeOut.create(0.1);
-        var actionMove = new cc.Sequence.create(seq1, seq2);
+        var actionMove = new cc.MoveBy.create(0.5, cc.p(visitedTiles[0].col*tileSize - visitedTiles[1].col*tileSize, visitedTiles[0].row*tileSize - visitedTiles[1].row*tileSize));
         tileArray[visitedTiles[1].row][visitedTiles[1].col].runAction(actionMove);
+
+        setTimeout(function(){
+
+             for(var i=0; i<visitedTiles.length; i++){
+            globezLayer.removeChild(tileArray[visitedTiles[i].row][visitedTiles[i].col]);
+            tileArray[visitedTiles[i].row][visitedTiles[i].col]=null;
+        }
+
+        tileArray[visitedTiles[0].row][visitedTiles[0].col] = sprite2;
+        tileArray[visitedTiles[1].row][visitedTiles[1].col] = sprite1;
+
+        for(i = 0; i < visitedTiles.length; i ++){
+            globezLayer.addChild(tileArray[visitedTiles[i].row][visitedTiles[i].col],0);
+            tileArray[visitedTiles[i].row][visitedTiles[i].col].setPosition(visitedTiles[i].col*tileSize+tileSize/2,visitedTiles[i].row*tileSize+tileSize/2);
+            tileArray[visitedTiles[i].row][visitedTiles[i].col].setOpacity(255);
+            tileArray[visitedTiles[i].row][visitedTiles[i].col].picked=false;
+        }
+
+            },500);
     },
 
     searchMatchTile: function(currentRow, currentCol){
@@ -259,11 +280,10 @@ var touchListener = cc.EventListener.create({
     },
 
     onMouseDown: function (event) {
-        var pickedRow = Math.floor( (event._y - layer_posY) / tileSize);
-        var pickedCol = Math.floor( (event._x - layer_posX) / tileSize);
+        pickedRow = Math.floor( (event._y - layer_posY) / tileSize);
+        pickedCol = Math.floor( (event._x - layer_posX) / tileSize);
 
-        if( (pickedRow >= 0 && pickedRow < fieldSize) && (pickedCol >= 0 && pickedCol < fieldSize) )
-        {
+        if( (pickedRow >= 0 && pickedRow < fieldSize) && (pickedCol >= 0 && pickedCol < fieldSize) ){
             tileArray[pickedRow][pickedCol].setOpacity(128);
             tileArray[pickedRow][pickedCol].picked = true;
             startColor = tileArray[pickedRow][pickedCol].val;
@@ -276,59 +296,66 @@ var touchListener = cc.EventListener.create({
 
     onMouseUp: function(event){
         startColor=null;
-        if (visitedTiles.length == 2) {  
-            this.swapCandy();
+        if (visitedTiles.length == 2) { 
+            //this.swapCandy();
         //     //this.swapCandy();
-        //      //this.swapCandyAnimation();
-        //      var that = this;
-        //     setTimeout(function(){
-        //         cc.log("swapCandy");
-        //         that.swapCandy();
-        //         // for(var i=0; i<visitedTiles.length; i++){
-        //         // globezLayer.removeChild(tileArray[visitedTiles[i].row][visitedTiles[i].col]);
-        //         // tileArray[visitedTiles[i].row][visitedTiles[i].col]=null;
-        //     //}
+        this.swapCandyAnimation();
+            //  var that = this;
+            // setTimeout(function(){
+            //     cc.log("swapCandy");
+            //     that.swapCandy();
+            //     // for(var i=0; i<visitedTiles.length; i++){
+            //     // globezLayer.removeChild(tileArray[visitedTiles[i].row][visitedTiles[i].col]);
+            //     // tileArray[visitedTiles[i].row][visitedTiles[i].col]=null;
+            // //}
 
-        //     },2000);
+            // },2000);
          }
         else{
-            //for(i = 0; i < visitedTiles.length; i ++){
+            if( (pickedRow >= 0 && pickedRow < fieldSize) && (pickedCol >= 0 && pickedCol < fieldSize) ){
                 tileArray[visitedTiles[0].row][visitedTiles[0].col].setOpacity(255);
                 tileArray[visitedTiles[0].row][visitedTiles[0].col].picked=false;
-            //}
-        }
-
-        // matchResultTile Array process
-
-        if (visitedTiles.length == 2){
-            this.searchSameTile();
-            if(resultFlag)
-            this.swapCandy();
-        }
-
-        // New tile create after remove
-        for(var i = 0; i < fieldSize; i ++){
-            for(j = fieldSize-1; j>=0; j --){
-                if(tileArray[j][i] != null){
-                    break;
-                }
+                visitedTiles = [];
             }
-            var missingGlobes = fieldSize-1-j;
-            if(missingGlobes>0){
-                for(var j=0;j<missingGlobes;j++){
-                    if(tileArray[fieldSize-j-1][i] == null){
-                    var target = event.getCurrentTarget();
-                    target.fallTile(fieldSize-j-1,i,missingGlobes-j);   
+        }
+
+        var that = this;
+
+        setTimeout(function(){
+            // matchResultTile Array process
+            if (visitedTiles.length == 2){
+                that.searchSameTile();
+                if(resultFlag)
+                that.swapCandyAnimation();
+            }
+
+            // New tile create after remove
+            for(var i = 0; i < fieldSize; i ++){
+                for(j = fieldSize-1; j>=0; j --){
+                    if(tileArray[j][i] != null){
+                        break;
+                    }
+                }
+                var missingGlobes = fieldSize-1-j;
+                if(missingGlobes>0){
+                    for(var j=0;j<missingGlobes;j++){
+                        if(tileArray[fieldSize-j-1][i] == null){
+                        var target = event.getCurrentTarget();
+                        target.fallTile(fieldSize-j-1,i,missingGlobes-j);   
+                        }
                     }
                 }
             }
-        }
 
-        resultFlag = true;
-        matchResultTile = [];
-        matchHorizontalTile = [];
-        matchVerticalTile = [];
-        visitedTiles = [];
+        },500);
+
+        setTimeout(function(){
+            resultFlag = true;
+            matchResultTile = [];
+            matchHorizontalTile = [];
+            matchVerticalTile = [];
+            visitedTiles = [];
+        },1010);       
     },
 
     onMouseMove: function(event){
