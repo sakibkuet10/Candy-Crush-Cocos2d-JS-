@@ -1,1 +1,1 @@
-# Candy-Crush-Cocos2d-JS-
+# Candy-Crush-(Platform: Cocos2d-JS)
