@@ -19,6 +19,7 @@ var matchHorizontalTile = [];
 var matchVerticalTile = [];
 var matchResultTile = [];
 var resultFlag = true;
+var currentMatchResultTile;
 
 var HelloWorldLayer = cc.Layer.extend({
     sprite:null,
@@ -95,23 +96,7 @@ var HelloWorldLayer = cc.Layer.extend({
         sprite.setPosition(col*tileSize+tileSize/2,row*tileSize+tileSize/2);
         tileImageBacklayer.addChild(sprite,0);
     },
-
-    fallTile:function(row,col,height){
-        var randomTile = Math.floor(Math.random()*tileTypes.length);
-        //var sprite = cc.Sprite.createWithSpriteFrame(tileImage[randomTile]);
-        var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[randomTile]);
-        sprite.val = randomTile;
-        sprite.picked = false;
-        sprite.setScale(0.55);
-        globezLayer.addChild(sprite,0);
-        sprite.setPosition(col*tileSize+tileSize/2,(fieldSize+height)*tileSize);
-        var moveAction = cc.MoveTo.create(0.8, new cc.Point(col*tileSize+tileSize/2,row*tileSize+tileSize/2));
-        sprite.runAction(moveAction);
-        tileArray[row][col] = sprite;
-    }
 });
-
-var sprite1, sprite2;
 
 var pickedRow;
 var pickedCol;
@@ -119,56 +104,44 @@ var pickedCol;
 var touchListener = cc.EventListener.create({
     event: cc.EventListener.MOUSE,
 
-    swapCandy: function(){
-        var sprite1 = tileArray[visitedTiles[0].row][visitedTiles[0].col];
-        var sprite2 = tileArray[visitedTiles[1].row][visitedTiles[1].col];
-        
-        for(var i=0; i<visitedTiles.length; i++){
-            globezLayer.removeChild(tileArray[visitedTiles[i].row][visitedTiles[i].col]);
-            tileArray[visitedTiles[i].row][visitedTiles[i].col]=null;
-        }
-
-        tileArray[visitedTiles[0].row][visitedTiles[0].col] = sprite2;
-        tileArray[visitedTiles[1].row][visitedTiles[1].col] = sprite1;
-
-        for(i = 0; i < visitedTiles.length; i ++){
-            globezLayer.addChild(tileArray[visitedTiles[i].row][visitedTiles[i].col],0);
-            tileArray[visitedTiles[i].row][visitedTiles[i].col].setPosition(visitedTiles[i].col*tileSize+tileSize/2,visitedTiles[i].row*tileSize+tileSize/2);
-            tileArray[visitedTiles[i].row][visitedTiles[i].col].setOpacity(255);
-            tileArray[visitedTiles[i].row][visitedTiles[i].col].picked=false;
-        }
-    },
-
     swapCandyAnimation: function(){
-        cc.log("swapCandyAnimation");
+        //cc.log("swapCandyAnimation");
 
         var sprite1 = tileArray[visitedTiles[0].row][visitedTiles[0].col];
         var sprite2 = tileArray[visitedTiles[1].row][visitedTiles[1].col];
 
-        var actionMove = new cc.MoveBy.create(0.5, cc.p(visitedTiles[1].col*tileSize - visitedTiles[0].col*tileSize, visitedTiles[1].row*tileSize - visitedTiles[0].row*tileSize))
+        var actionMove = new cc.MoveBy.create(0.3, cc.p(visitedTiles[1].col*tileSize - visitedTiles[0].col*tileSize, visitedTiles[1].row*tileSize - visitedTiles[0].row*tileSize))
         tileArray[visitedTiles[0].row][visitedTiles[0].col].runAction(actionMove);
 
-        var actionMove = new cc.MoveBy.create(0.5, cc.p(visitedTiles[0].col*tileSize - visitedTiles[1].col*tileSize, visitedTiles[0].row*tileSize - visitedTiles[1].row*tileSize));
+        var actionMove = new cc.MoveBy.create(0.3, cc.p(visitedTiles[0].col*tileSize - visitedTiles[1].col*tileSize, visitedTiles[0].row*tileSize - visitedTiles[1].row*tileSize));
         tileArray[visitedTiles[1].row][visitedTiles[1].col].runAction(actionMove);
 
         setTimeout(function(){
 
-             for(var i=0; i<visitedTiles.length; i++){
-            globezLayer.removeChild(tileArray[visitedTiles[i].row][visitedTiles[i].col]);
-            tileArray[visitedTiles[i].row][visitedTiles[i].col]=null;
+            for(var i=0; i<visitedTiles.length; i++){
+                globezLayer.removeChild(tileArray[visitedTiles[i].row][visitedTiles[i].col]);
+                tileArray[visitedTiles[i].row][visitedTiles[i].col]=null;
+            }
+
+            tileArray[visitedTiles[0].row][visitedTiles[0].col] = sprite2;
+            tileArray[visitedTiles[1].row][visitedTiles[1].col] = sprite1;
+
+            for(i = 0; i < visitedTiles.length; i ++){
+                globezLayer.addChild(tileArray[visitedTiles[i].row][visitedTiles[i].col],0);
+                tileArray[visitedTiles[i].row][visitedTiles[i].col].setPosition(visitedTiles[i].col*tileSize+tileSize/2,visitedTiles[i].row*tileSize+tileSize/2);
+                tileArray[visitedTiles[i].row][visitedTiles[i].col].setOpacity(255);
+                tileArray[visitedTiles[i].row][visitedTiles[i].col].picked=false;
+            }
+        },300);
+    },
+
+    notInMatchResultTile:function(r,c){
+        for(var i=0; i<matchResultTile.length; i++){
+            if(matchResultTile[i].row == r && matchResultTile[i].col == c)
+                return false;
         }
 
-        tileArray[visitedTiles[0].row][visitedTiles[0].col] = sprite2;
-        tileArray[visitedTiles[1].row][visitedTiles[1].col] = sprite1;
-
-        for(i = 0; i < visitedTiles.length; i ++){
-            globezLayer.addChild(tileArray[visitedTiles[i].row][visitedTiles[i].col],0);
-            tileArray[visitedTiles[i].row][visitedTiles[i].col].setPosition(visitedTiles[i].col*tileSize+tileSize/2,visitedTiles[i].row*tileSize+tileSize/2);
-            tileArray[visitedTiles[i].row][visitedTiles[i].col].setOpacity(255);
-            tileArray[visitedTiles[i].row][visitedTiles[i].col].picked=false;
-        }
-
-            },500);
+        return true;
     },
 
     searchMatchTile: function(currentRow, currentCol){
@@ -176,40 +149,46 @@ var touchListener = cc.EventListener.create({
         // Horizontal Search
         matchHorizontalTile.push({
                 row: currentRow,
-                col: currentCol
+                col: currentCol,
+                val: tileArray[currentRow][currentCol].val
             });
 
-        for(var i=1; (currentRow+i<fieldSize && currentRow+i>=0) && tileArray[currentRow+i][currentCol].val == tileArray[currentRow][currentCol].val; i++){
+        for(var i=1; (currentRow+i<fieldSize && currentRow+i>=0) && tileArray[currentRow+i][currentCol].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow+i,currentCol); i++){
             matchHorizontalTile.push({
                 row: currentRow+i,
-                col: currentCol
+                col: currentCol,
+                val: tileArray[currentRow+i][currentCol].val
             });
         }
 
-        for(var i=-1; (currentRow+i<fieldSize && currentRow+i>=0) && tileArray[currentRow+i][currentCol].val == tileArray[currentRow][currentCol].val; i--){
+        for(var i=-1; (currentRow+i<fieldSize && currentRow+i>=0) && (tileArray[currentRow+i][currentCol].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow+i,currentCol) ); i--){
             matchHorizontalTile.push({
                 row: currentRow+i,
-                col: currentCol
+                col: currentCol,
+                val: tileArray[currentRow+i][currentCol].val
             });
         }
 
         // Vertical Search
         matchVerticalTile.push({
                 row: currentRow,
-                col: currentCol
+                col: currentCol,
+                val: tileArray[currentRow][currentCol].val
             });
 
-        for(var i=1; (currentCol+i<fieldSize && currentCol+i>=0) && tileArray[currentRow][currentCol+i].val == tileArray[currentRow][currentCol].val; i++){
+        for(var i=1; (currentCol+i<fieldSize && currentCol+i>=0) && tileArray[currentRow][currentCol+i].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow,currentCol+i); i++){
             matchVerticalTile.push({
                 row: currentRow,
-                col: currentCol+i
+                col: currentCol+i,
+                val: tileArray[currentRow][currentCol+i].val
             });
         }
 
-        for(var i=-1; (currentCol+i<fieldSize && currentCol+i>=0) && tileArray[currentRow][currentCol+i].val == tileArray[currentRow][currentCol].val; i--){
+        for(var i=-1; (currentCol+i<fieldSize && currentCol+i>=0) && tileArray[currentRow][currentCol+i].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow,currentCol+i); i--){
             matchVerticalTile.push({
                 row: currentRow,
-                col: currentCol+i
+                col: currentCol+i,
+                val: tileArray[currentRow][currentCol+i].val
             });
         }
     },
@@ -222,7 +201,6 @@ var touchListener = cc.EventListener.create({
             for(var i=1; i<matchVerticalTile.length; i++)
                 matchResultTile.push(matchVerticalTile[i]);
         }
-
         else if(matchHorizontalTile.length >= matchSize)
             for(var i=0; i<matchHorizontalTile.length; i++)
                 matchResultTile.push(matchHorizontalTile[i]);
@@ -230,6 +208,20 @@ var touchListener = cc.EventListener.create({
         else if(matchVerticalTile.length >= matchSize)
             for(var i=0; i<matchVerticalTile.length; i++)
                 matchResultTile.push(matchVerticalTile[i]);
+    },
+
+    fallTile:function(row,col,height){
+        var randomTile = Math.floor(Math.random()*tileTypes.length);
+        //var sprite = cc.Sprite.createWithSpriteFrame(tileImage[randomTile]);
+        var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[randomTile]);
+        sprite.val = randomTile;
+        sprite.picked = false;
+        sprite.setScale(0.55);
+        globezLayer.addChild(sprite,0);
+        sprite.setPosition(col*tileSize+tileSize/2,(fieldSize+height)*tileSize);
+        var moveAction = cc.MoveTo.create(1.0, new cc.Point(col*tileSize+tileSize/2,row*tileSize+tileSize/2));
+        sprite.runAction(moveAction);
+        tileArray[row][col] = sprite;
     },
 
     fallTileAnimation: function(){
@@ -243,8 +235,8 @@ var touchListener = cc.EventListener.create({
                         }
                     }
                     if(holesBelow>0){
-                        var moveAction = cc.MoveTo.create(0.8, new cc.Point(tileArray[i][j].x,tileArray[i][j].y-holesBelow*tileSize));
-                        // cc,moveTo() can also be used
+                        var moveAction = cc.MoveTo.create(1.0, new cc.Point(tileArray[i][j].x,tileArray[i][j].y-holesBelow*tileSize));
+                        // cc.moveTo() can also be used
                         tileArray[i][j].runAction(moveAction);
                         tileArray[i - holesBelow][j] = tileArray[i][j];
                         tileArray[i][j] = null;
@@ -277,6 +269,73 @@ var touchListener = cc.EventListener.create({
         // Delete Match Tile
         if(matchResultTile.length>=matchSize)
             this.deleteMatchTile();
+
+        //cc.log(matchResultTile);
+    },
+
+    fallTileCreate: function(){
+        for(var i = 0; i < fieldSize; i ++){
+            for(j = fieldSize-1; j>=0; j --){
+                if(tileArray[j][i] != null){
+                    break;
+                }
+            }
+            var missingGlobes = fieldSize-1-j;
+            if(missingGlobes>0){
+                for(var j=0;j<missingGlobes;j++){
+                    if(tileArray[fieldSize-j-1][i] == null){
+                    //var target = event.getCurrentTarget();
+                    //target.fallTile(fieldSize-j-1,i,missingGlobes-j);   
+                    this.fallTile(fieldSize-j-1,i,missingGlobes-j);   
+                    }
+                }
+            }
+        }
+    },
+
+    checkCollision:function(){
+        for(var i=0; i<currentMatchResultTile.length; i++){
+            for(var j=currentMatchResultTile[i].row; j<fieldSize; j++){
+                matchHorizontalTile = [];
+                matchVerticalTile = [];
+                this.searchMatchTile(j, currentMatchResultTile[i].col);
+            //    this.searchMatchTile(currentMatchResultTile[i].row, currentMatchResultTile[i].col);
+                this.process_matchResultTile();
+            }
+        }
+
+        // Delete Match Tile
+        if(matchResultTile.length>=matchSize){
+            //this.deleteMatchTile();
+            //cc.log("checkCollision");
+            //cc.log(matchResultTile);
+            return true;
+        }
+
+
+        return false;
+            //cc.log("checkCollision");
+
+        //cc.log(matchResultTile);
+    },
+
+    UpdateFunction: function(){
+        var that = this;
+        //cc.log("Guti Baj Talha");
+        currentMatchResultTile = [];
+        currentMatchResultTile = matchResultTile;
+        //cc.log(currentMatchResultTile);
+        matchResultTile = [];
+        matchHorizontalTile = [];
+        matchVerticalTile = [];
+
+        if(this.checkCollision()){
+            this.deleteMatchTile();
+            this.fallTileCreate();
+            setTimeout(function(){
+                that.UpdateFunction();
+            }, 1000);
+        }        
     },
 
     onMouseDown: function (event) {
@@ -296,21 +355,32 @@ var touchListener = cc.EventListener.create({
 
     onMouseUp: function(event){
         startColor=null;
-        if (visitedTiles.length == 2) { 
-            //this.swapCandy();
-        //     //this.swapCandy();
-        this.swapCandyAnimation();
-            //  var that = this;
-            // setTimeout(function(){
-            //     cc.log("swapCandy");
-            //     that.swapCandy();
-            //     // for(var i=0; i<visitedTiles.length; i++){
-            //     // globezLayer.removeChild(tileArray[visitedTiles[i].row][visitedTiles[i].col]);
-            //     // tileArray[visitedTiles[i].row][visitedTiles[i].col]=null;
-            // //}
+        if (visitedTiles.length == 2){ 
+            this.swapCandyAnimation();
 
-            // },2000);
-         }
+            var that = this;
+
+            setTimeout(function(){
+                // matchResultTile Array process
+                if (visitedTiles.length == 2){
+                    that.searchSameTile();
+                    if(resultFlag)
+                    that.swapCandyAnimation();
+                }
+                // New tile create after remove
+                that.fallTileCreate(); // 1.0 second
+                
+                setTimeout(function(){
+                    that.UpdateFunction();
+                },1000);
+
+                setTimeout(function(){
+                    resultFlag = true;
+                    visitedTiles = [];
+                },1010);
+
+            },300);
+        }
         else{
             if( (pickedRow >= 0 && pickedRow < fieldSize) && (pickedCol >= 0 && pickedCol < fieldSize) ){
                 tileArray[visitedTiles[0].row][visitedTiles[0].col].setOpacity(255);
@@ -319,43 +389,7 @@ var touchListener = cc.EventListener.create({
             }
         }
 
-        var that = this;
-
-        setTimeout(function(){
-            // matchResultTile Array process
-            if (visitedTiles.length == 2){
-                that.searchSameTile();
-                if(resultFlag)
-                that.swapCandyAnimation();
-            }
-
-            // New tile create after remove
-            for(var i = 0; i < fieldSize; i ++){
-                for(j = fieldSize-1; j>=0; j --){
-                    if(tileArray[j][i] != null){
-                        break;
-                    }
-                }
-                var missingGlobes = fieldSize-1-j;
-                if(missingGlobes>0){
-                    for(var j=0;j<missingGlobes;j++){
-                        if(tileArray[fieldSize-j-1][i] == null){
-                        var target = event.getCurrentTarget();
-                        target.fallTile(fieldSize-j-1,i,missingGlobes-j);   
-                        }
-                    }
-                }
-            }
-
-        },500);
-
-        setTimeout(function(){
-            resultFlag = true;
-            matchResultTile = [];
-            matchHorizontalTile = [];
-            matchVerticalTile = [];
-            visitedTiles = [];
-        },1010);       
+           
     },
 
     onMouseMove: function(event){
