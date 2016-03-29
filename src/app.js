@@ -4,8 +4,8 @@ var tileSize = 60;
 var tileArray = [];
 var tileImage=[];
 var tileImageBack = "res/tile.png";
-//var tileTypes = ["red", "green", "blue", "pink", "sky", "white"];
-var tileTypes = ["red", "green", "blue", "pink"];
+var tileTypes = ["red", "green", "blue", "pink", "sky", "white"];
+//var tileTypes = ["red", "green", "blue", "pink"];
 
 var layer_posX, layer_posY;
 
@@ -94,14 +94,12 @@ var HelloWorldLayer = cc.Layer.extend({
 
     addTile:function(row,col){
         var randomTile = Math.floor(Math.random()*tileTypes.length);
-        //var sprite = cc.Sprite.createWithSpriteFrame(tileImage[randomTile]);
         var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[randomTile]);
         sprite.val = randomTile;
         sprite.picked = false;
         sprite.setScale(0.55);
         globezLayer.addChild(sprite,1);
         sprite.setPosition(col*tileSize+tileSize/2,row*tileSize+tileSize/2);
-        //sprite.setPosition((col*tileSize+tileSize/2)+2 , (row*tileSize+tileSize/2)+4);    
         tileArray[row][col] = sprite;
 
         var sprite = new cc.Sprite.create(tileImageBack);
@@ -226,7 +224,6 @@ var touchListener = cc.EventListener.create({
 
     fallTile:function(row,col,height){
         var randomTile = Math.floor(Math.random()*tileTypes.length);
-        //var sprite = cc.Sprite.createWithSpriteFrame(tileImage[randomTile]);
         var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[randomTile]);
         sprite.val = randomTile;
         sprite.picked = false;
@@ -282,8 +279,6 @@ var touchListener = cc.EventListener.create({
         // Delete Match Tile
         if(matchResultTile.length>=matchSize)
             this.deleteMatchTile();
-
-        //cc.log(matchResultTile);
     },
 
     fallTileCreate: function(){
@@ -313,34 +308,22 @@ var touchListener = cc.EventListener.create({
                 matchHorizontalTile = [];
                 matchVerticalTile = [];
                 this.searchMatchTile(j, currentMatchResultTile[i].col);
-            //    this.searchMatchTile(currentMatchResultTile[i].row, currentMatchResultTile[i].col);
                 this.process_matchResultTile();
             }
         }
 
         // Delete Match Tile
-        if(matchResultTile.length>=matchSize){
-            //this.deleteMatchTile();
-            //cc.log("checkCollision");
-            //cc.log(matchResultTile);
+        if(matchResultTile.length>=matchSize)
             return true;
-        }
 
         return false;
-
-    //cc.log("checkCollision");
-
-    //cc.log(matchResultTile);
     },
 
     UpdateFunction: function(){
         var that = this;
-        cc.log("Guti Baj Talha");
+        //cc.log("Guti Baj Talha");
         currentMatchResultTile = [];
         currentMatchResultTile = matchResultTile;
-        // matchResultTile = [];
-        // matchHorizontalTile = [];
-        // matchVerticalTile = [];
 
         if(this.checkCollision()){
             this.deleteMatchTile();
@@ -393,7 +376,7 @@ var touchListener = cc.EventListener.create({
 
                 setTimeout(function(){
                         visitedTiles = [];
-                },900);
+                },350);
                 
 
             },300);
