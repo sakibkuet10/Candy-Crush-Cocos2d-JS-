@@ -21,6 +21,8 @@ var matchResultTile = [];
 var resultFlag = true;
 var currentMatchResultTile;
 
+var previous_rend_num = -1;
+
 var HelloWorldLayer = cc.Layer.extend({
     sprite:null,
     ctor:function () {
@@ -66,7 +68,17 @@ var HelloWorldLayer = cc.Layer.extend({
 
         this.createLevel();
 
+        // Auto match for First Loading
+        for(var i=0; i<fieldSize; i++){
+            matchResultTile.push({
+                row: 0,
+                col: i,
+                val: tileArray[0][i].val
+            });
+        }
+
         cc.eventManager.addListener(touchListener, this);
+        touchListener.UpdateFunction();
 
         return true;
     },
@@ -323,7 +335,7 @@ var touchListener = cc.EventListener.create({
 
     UpdateFunction: function(){
         var that = this;
-        //cc.log("Guti Baj Talha");
+        cc.log("Guti Baj Talha");
         currentMatchResultTile = [];
         currentMatchResultTile = matchResultTile;
         // matchResultTile = [];
@@ -377,8 +389,6 @@ var touchListener = cc.EventListener.create({
                     setTimeout(function(){
                         that.UpdateFunction();
                     },850);
-
-                    
                 }
 
                 setTimeout(function(){
