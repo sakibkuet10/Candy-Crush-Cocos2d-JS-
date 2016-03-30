@@ -4,8 +4,8 @@ var tileSize = 60;
 var tileArray = [];
 var tileImage=[];
 var tileImageBack = "res/tile.png";
-var tileTypes = ["red", "green", "blue", "pink", "sky", "white"];
-//var tileTypes = ["red", "green", "blue", "pink"];
+//var tileTypes = ["red", "green", "blue", "pink", "sky", "white"];
+var tileTypes = ["red", "green", "blue", "pink"];
 
 var layer_posX, layer_posY;
 
@@ -21,7 +21,7 @@ var matchResultTile = [];
 var resultFlag = true;
 var currentMatchResultTile;
 
-var previous_rend_num = -1;
+var powerTileArray = [];
 
 var HelloWorldLayer = cc.Layer.extend({
     sprite:null,
@@ -50,14 +50,18 @@ var HelloWorldLayer = cc.Layer.extend({
 
         // candy image process
         var x1 = 0, x2=90, y1=0, y2=85;
-        for (var i=0; i<6; i++){
-            tileImage.push(cc.rect(x1,y1,x2,y2));
-            if( i >= 3)
-                x1 += x2+5;
-            else
-                x1 += x2+15;
+        for(var i=0; i<5; i++){
+            tileImage[i] = [];
+            for (var j=0; j<6; j++){
+                tileImage[i].push(cc.rect(x1,y1,x2,y2));
+                if( j >= 3)
+                    x1 += x2+7;
+                else
+                    x1 += x2+15;
+            }
+            x1 = 0, x2=90, y1 += 95, y2=85;
         }
-
+        
         tileImageBacklayer = cc.Layer.create();
         tileImageBacklayer.setPosition(layer_posX, layer_posY);
         this.addChild(tileImageBacklayer);
@@ -94,8 +98,9 @@ var HelloWorldLayer = cc.Layer.extend({
 
     addTile:function(row,col){
         var randomTile = Math.floor(Math.random()*tileTypes.length);
-        var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[randomTile]);
+        var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[0][randomTile]);
         sprite.val = randomTile;
+        sprite.power = 0;
         sprite.picked = false;
         sprite.setScale(0.55);
         globezLayer.addChild(sprite,1);
@@ -127,7 +132,6 @@ var touchListener = cc.EventListener.create({
         tileArray[visitedTiles[1].row][visitedTiles[1].col].runAction(actionMove);
 
         setTimeout(function(){
-
             for(var i=0; i<visitedTiles.length; i++){
                 globezLayer.removeChild(tileArray[visitedTiles[i].row][visitedTiles[i].col]);
                 tileArray[visitedTiles[i].row][visitedTiles[i].col]=null;
@@ -158,29 +162,6 @@ var touchListener = cc.EventListener.create({
         matchHorizontalTile = [];
         matchVerticalTile = [];
 
-        // Horizontal Search
-        matchHorizontalTile.push({
-                row: currentRow,
-                col: currentCol,
-                val: tileArray[currentRow][currentCol].val
-            });
-
-        for(var i=1; (currentRow+i<fieldSize && currentRow+i>=0) && tileArray[currentRow+i][currentCol].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow+i,currentCol); i++){
-            matchHorizontalTile.push({
-                row: currentRow+i,
-                col: currentCol,
-                val: tileArray[currentRow+i][currentCol].val
-            });
-        }
-
-        for(var i=-1; (currentRow+i<fieldSize && currentRow+i>=0) && (tileArray[currentRow+i][currentCol].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow+i,currentCol) ); i--){
-            matchHorizontalTile.push({
-                row: currentRow+i,
-                col: currentCol,
-                val: tileArray[currentRow+i][currentCol].val
-            });
-        }
-
         // Vertical Search
         matchVerticalTile.push({
                 row: currentRow,
@@ -188,8 +169,31 @@ var touchListener = cc.EventListener.create({
                 val: tileArray[currentRow][currentCol].val
             });
 
-        for(var i=1; (currentCol+i<fieldSize && currentCol+i>=0) && tileArray[currentRow][currentCol+i].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow,currentCol+i); i++){
+        for(var i=1; (currentRow+i<fieldSize && currentRow+i>=0) && tileArray[currentRow+i][currentCol].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow+i,currentCol); i++){
             matchVerticalTile.push({
+                row: currentRow+i,
+                col: currentCol,
+                val: tileArray[currentRow+i][currentCol].val
+            });
+        }
+
+        for(var i=-1; (currentRow+i<fieldSize && currentRow+i>=0) && (tileArray[currentRow+i][currentCol].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow+i,currentCol) ); i--){
+            matchVerticalTile.push({
+                row: currentRow+i,
+                col: currentCol,
+                val: tileArray[currentRow+i][currentCol].val
+            });
+        }
+
+        // Horizontal Search
+        matchHorizontalTile.push({
+                row: currentRow,
+                col: currentCol,
+                val: tileArray[currentRow][currentCol].val
+            });
+
+        for(var i=1; (currentCol+i<fieldSize && currentCol+i>=0) && tileArray[currentRow][currentCol+i].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow,currentCol+i); i++){
+            matchHorizontalTile.push({
                 row: currentRow,
                 col: currentCol+i,
                 val: tileArray[currentRow][currentCol+i].val
@@ -197,7 +201,7 @@ var touchListener = cc.EventListener.create({
         }
 
         for(var i=-1; (currentCol+i<fieldSize && currentCol+i>=0) && tileArray[currentRow][currentCol+i].val == tileArray[currentRow][currentCol].val && this.notInMatchResultTile(currentRow,currentCol+i); i--){
-            matchVerticalTile.push({
+            matchHorizontalTile.push({
                 row: currentRow,
                 col: currentCol+i,
                 val: tileArray[currentRow][currentCol+i].val
@@ -205,27 +209,118 @@ var touchListener = cc.EventListener.create({
         }
     },
 
+    powerHorizontal: function(R){
+        for(var i=0; i<fieldSize; i++){
+            matchResultTile.push({
+                row: R,
+                col: i
+            });
+            if(tileArray[R][i].power == 1)
+                this.powerVertical(i);
+        }
+    },
+
+    powerVertical: function(C){
+        for(var i=0; i<fieldSize; i++){
+            matchResultTile.push({
+                row: i,
+                col: C
+            });
+            if(tileArray[i][C].power == 2)
+                this.powerHorizontal(i);
+        }
+    },
+
     process_matchResultTile:function(){
         if(matchHorizontalTile.length >= matchSize && matchVerticalTile.length >= matchSize){
-            for(var i=0; i<matchHorizontalTile.length; i++)
+            for(var i=0; i<matchHorizontalTile.length; i++){
                 matchResultTile.push(matchHorizontalTile[i]);
+            }
 
             for(var i=1; i<matchVerticalTile.length; i++)
                 matchResultTile.push(matchVerticalTile[i]);
-        }
-        else if(matchHorizontalTile.length >= matchSize)
-            for(var i=0; i<matchHorizontalTile.length; i++)
-                matchResultTile.push(matchHorizontalTile[i]);
 
-        else if(matchVerticalTile.length >= matchSize)
-            for(var i=0; i<matchVerticalTile.length; i++)
-                matchResultTile.push(matchVerticalTile[i]);
+            if(matchHorizontalTile[0].val == matchVerticalTile[0].val){
+                if( matchHorizontalTile[0].row == matchVerticalTile[0].row && matchHorizontalTile[0].col == matchVerticalTile[0].col){
+                    powerTileArray.push({
+                        row: matchHorizontalTile[0].row,
+                        col: matchHorizontalTile[0].col,
+                        val: matchHorizontalTile[0].val,
+                        power: 3
+                    });
+                }
+            }
+        }
+        else if(matchHorizontalTile.length >= matchSize){
+            for(var i=0; i<matchHorizontalTile.length; i++){
+                if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 2 ){
+                    this.powerHorizontal(matchHorizontalTile[i].row);
+                    break;
+                }
+                else if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 1 ){
+                    this.powerVertical(matchHorizontalTile[i].col);
+                    break;
+                }
+                else
+                    matchResultTile.push(matchHorizontalTile[i]);
+            }
+
+            if(matchHorizontalTile.length == 4){
+                powerTileArray.push({
+                    row: matchHorizontalTile[0].row,
+                    col: matchHorizontalTile[0].col,
+                    val: matchHorizontalTile[0].val,
+                    power: 2
+                });
+            }
+            else if(matchHorizontalTile.length >= 5){
+                powerTileArray.push({
+                    row: matchHorizontalTile[0].row,
+                    col: matchHorizontalTile[0].col,
+                    val: matchHorizontalTile[0].val,
+                    power: 4
+                });
+            }
+        }
+
+        else if(matchVerticalTile.length >= matchSize){
+            for(var i=0; i<matchVerticalTile.length; i++){
+                if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 1){
+                    this.powerVertical(matchVerticalTile[i].col);
+                    break;
+                }
+                else if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 2){
+                    this.powerHorizontal(matchVerticalTile[i].row);
+                    break;
+                }
+                else
+                    matchResultTile.push(matchVerticalTile[i]);
+            }
+
+            if(matchVerticalTile.length == 4){
+                powerTileArray.push({
+                    row: matchVerticalTile[0].row,
+                    col: matchVerticalTile[0].col,
+                    val: matchVerticalTile[0].val,
+                    power: 1
+                });
+            }
+            else if(matchVerticalTile.length >= 5){
+                powerTileArray.push({
+                    row: matchVerticalTile[0].row,
+                    col: matchVerticalTile[0].col,
+                    val: matchVerticalTile[0].val,
+                    power: 4
+                });
+            }
+        }
     },
 
     fallTile:function(row,col,height){
         var randomTile = Math.floor(Math.random()*tileTypes.length);
-        var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[randomTile]);
+        var sprite = cc.Sprite.createWithSpriteFrame("res/candy.png" ,tileImage[0][randomTile]);
         sprite.val = randomTile;
+        sprite.power = 0;
         sprite.picked = false;
         sprite.setScale(0.55);
         globezLayer.addChild(sprite,0);
@@ -259,9 +354,22 @@ var touchListener = cc.EventListener.create({
 
     deleteMatchTile:function(){
         resultFlag = false;
+        cc.log(matchResultTile);
         for(var i=0; i<matchResultTile.length; i++){
             globezLayer.removeChild(tileArray[matchResultTile[i].row][matchResultTile[i].col]);
             tileArray[matchResultTile[i].row][matchResultTile[i].col]=null;
+        }
+
+        // create power tile
+        for(var i=0; i<powerTileArray.length; i++){
+            var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[powerTileArray[i].power][powerTileArray[i].val]);
+            sprite.val = powerTileArray[i].val;
+            sprite.power = powerTileArray[i].power;
+            sprite.picked = false;
+            sprite.setScale(0.55);
+            globezLayer.addChild(sprite,1);
+            sprite.setPosition(powerTileArray[i].col*tileSize+tileSize/2,powerTileArray[i].row*tileSize+tileSize/2);
+            tileArray[powerTileArray[i].row][powerTileArray[i].col] = sprite;
         }
 
         this.fallTileAnimation();
@@ -269,6 +377,7 @@ var touchListener = cc.EventListener.create({
 
     searchSameTile:function(){
         matchResultTile = [];
+        powerTileArray = [];
 
         this.searchMatchTile(visitedTiles[0].row, visitedTiles[0].col);
         this.process_matchResultTile();
@@ -303,6 +412,7 @@ var touchListener = cc.EventListener.create({
 
     checkCollision:function(){
         matchResultTile = [];
+        powerTileArray = [];
         for(var i=0; i<currentMatchResultTile.length; i++){
             for(var j=currentMatchResultTile[i].row; j<fieldSize; j++){
                 matchHorizontalTile = [];
