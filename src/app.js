@@ -4,8 +4,8 @@ var tileSize = 60;
 var tileArray = [];
 var tileImage=[];
 var tileImageBack = "res/tile.png";
-//var tileTypes = ["red", "green", "blue", "pink", "sky", "white"];
-var tileTypes = ["red", "green", "blue", "pink"];
+var tileTypes = ["red", "green", "blue", "pink", "sky", "white"];
+//var tileTypes = ["red", "green", "blue", "pink"];
 
 var layer_posX, layer_posY;
 
@@ -22,6 +22,7 @@ var resultFlag = true;
 var currentMatchResultTile;
 
 var powerTileArray = [];
+var play = false;
 
 var HelloWorldLayer = cc.Layer.extend({
     sprite:null,
@@ -147,6 +148,8 @@ var touchListener = cc.EventListener.create({
                 tileArray[visitedTiles[i].row][visitedTiles[i].col].picked=false;
             }
         },300);
+
+        return 0;
     },
 
     notInMatchResultTile:function(r,c){
@@ -207,40 +210,115 @@ var touchListener = cc.EventListener.create({
                 val: tileArray[currentRow][currentCol+i].val
             });
         }
+
+        return 0;
     },
 
-    powerHorizontal: function(R){
+    powerHorizontal: function(R, C){
         for(var i=0; i<fieldSize; i++){
             matchResultTile.push({
                 row: R,
                 col: i
             });
             if(tileArray[R][i].power == 1)
-                this.powerVertical(i);
+                this.powerVertical(R, i);
+            else if (tileArray[R][i].power == 3)
+                this.powerCandy(R, i);
+            else if (tileArray[R][i].power == 4)
+                this.powerJumbo(R, i, tileArray[R][C].val);
         }
+
+        return 0;
     },
 
-    powerVertical: function(C){
+    powerVertical: function(R, C){
         for(var i=0; i<fieldSize; i++){
             matchResultTile.push({
                 row: i,
                 col: C
             });
             if(tileArray[i][C].power == 2)
-                this.powerHorizontal(i);
+                this.powerHorizontal(i, C);
+            else if (tileArray[i][C].power == 3)
+                this.powerCandy(i, C);
+            else if (tileArray[i][C].power == 4)
+                this.powerJumbo(i, C, tileArray[R][C].val);
         }
+
+        return 0;
+    },
+
+    powerCandy: function(R, C){
+        var dircCandy = [[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1],[1,0]];
+        for(var i=0; i<dircCandy.length; i++){
+            if( (dircCandy[i][0]+R >= 0 && dircCandy[i][0]+R < fieldSize) && (dircCandy[i][1]+C >= 0 && dircCandy[i][1]+C < fieldSize) ){
+                matchResultTile.push({
+                    row: dircCandy[i][0]+R,
+                    col: dircCandy[i][1]+C
+                });
+
+                if(tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 1)
+                    this.powerVertical(dircCandy[i][0]+R, dircCandy[i][1]+C);
+                else if(tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 2)
+                    this.powerHorizontal(dircCandy[i][0]+R, dircCandy[i][1]+C);
+                else if (tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 3)
+                    this.powerCandy(dircCandy[i][0]+R, dircCandy[i][1]+C);
+                else if (tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 4)
+                    this.powerJumbo(dircCandy[i][0]+R, dircCandy[i][1]+C, tileArray[R][C].val);
+            }
+        }
+
+        return 0;
+    },
+
+    powerJumbo: function(R, C, val){
+        for(var i=0; i<fieldSize; i++){
+            for(var j=0; j<fieldSize; j++){
+                if(tileArray[i][j].val == val){
+                    matchResultTile.push({
+                    row: i,
+                    col: j
+                });
+                }
+            }
+        }
+
+        return 0;
     },
 
     process_matchResultTile:function(){
         if(matchHorizontalTile.length >= matchSize && matchVerticalTile.length >= matchSize){
             for(var i=0; i<matchHorizontalTile.length; i++){
-                matchResultTile.push(matchHorizontalTile[i]);
+                if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 2 )
+                    this.powerHorizontal(matchHorizontalTile[i].row, matchHorizontalTile[i].col);
+                else if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 1 )
+                    this.powerVertical( matchHorizontalTile[i].row, matchHorizontalTile[i].col);
+                else if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 3 )
+                    this.powerCandy(matchHorizontalTile[i].row, matchHorizontalTile[i].col);
+                else
+                    matchResultTile.push(matchHorizontalTile[i]);
             }
 
-            for(var i=1; i<matchVerticalTile.length; i++)
-                matchResultTile.push(matchVerticalTile[i]);
+            for(var i=1; i<matchVerticalTile.length; i++){
+                if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 1)
+                    this.powerVertical( matchVerticalTile[i].row, matchVerticalTile[i].col);
+                else if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 2)
+                    this.powerHorizontal(matchVerticalTile[i].row, matchVerticalTile[i].row);
+                if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 3 )
+                    this.powerCandy(matchVerticalTile[i].row, matchVerticalTile[i].col);
+                else
+                    matchResultTile.push(matchVerticalTile[i]);
+            }
 
-            if(matchHorizontalTile[0].val == matchVerticalTile[0].val){
+            if(matchHorizontalTile.length >= 5 || matchVerticalTile.length >= 5){
+                powerTileArray.push({
+                    row: matchHorizontalTile[0].row,
+                    col: matchHorizontalTile[0].col,
+                    val: matchHorizontalTile[0].val,
+                    power: 4
+                });
+            }
+            else if(matchHorizontalTile[0].val == matchVerticalTile[0].val){
                 if( matchHorizontalTile[0].row == matchVerticalTile[0].row && matchHorizontalTile[0].col == matchVerticalTile[0].col){
                     powerTileArray.push({
                         row: matchHorizontalTile[0].row,
@@ -254,15 +332,18 @@ var touchListener = cc.EventListener.create({
         else if(matchHorizontalTile.length >= matchSize){
             for(var i=0; i<matchHorizontalTile.length; i++){
                 if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 2 ){
-                    this.powerHorizontal(matchHorizontalTile[i].row);
-                    break;
+                    this.powerHorizontal(matchHorizontalTile[i].row, matchHorizontalTile[i].col);
                 }
                 else if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 1 ){
-                    this.powerVertical(matchHorizontalTile[i].col);
-                    break;
+                    this.powerVertical(matchHorizontalTile[i].row, matchHorizontalTile[i].col);
                 }
                 else
                     matchResultTile.push(matchHorizontalTile[i]);
+
+                if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 3 ){
+                    cc.log("powerCandy");
+                    this.powerCandy(matchHorizontalTile[i].row, matchHorizontalTile[i].col);
+                }
             }
 
             if(matchHorizontalTile.length == 4){
@@ -286,15 +367,16 @@ var touchListener = cc.EventListener.create({
         else if(matchVerticalTile.length >= matchSize){
             for(var i=0; i<matchVerticalTile.length; i++){
                 if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 1){
-                    this.powerVertical(matchVerticalTile[i].col);
-                    break;
+                    this.powerVertical(matchVerticalTile[i].row, matchVerticalTile[i].col);
                 }
                 else if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 2){
-                    this.powerHorizontal(matchVerticalTile[i].row);
-                    break;
+                    this.powerHorizontal(matchVerticalTile[i].row, matchVerticalTile[i].col);
                 }
                 else
                     matchResultTile.push(matchVerticalTile[i]);
+
+                if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 3 )
+                    this.powerCandy(matchVerticalTile[i].row, matchVerticalTile[i].col);
             }
 
             if(matchVerticalTile.length == 4){
@@ -314,6 +396,8 @@ var touchListener = cc.EventListener.create({
                 });
             }
         }
+
+        return 0;
     },
 
     fallTile:function(row,col,height){
@@ -328,6 +412,8 @@ var touchListener = cc.EventListener.create({
         var moveAction = cc.MoveTo.create(0.75, new cc.Point(col*tileSize+tileSize/2,row*tileSize+tileSize/2));
         sprite.runAction(moveAction);
         tileArray[row][col] = sprite;
+
+        return 0;
     },
 
     fallTileAnimation: function(){
@@ -350,11 +436,12 @@ var touchListener = cc.EventListener.create({
                 }
             }
         }
+
+        return 0;
     },
 
     deleteMatchTile:function(){
         resultFlag = false;
-        cc.log(matchResultTile);
         for(var i=0; i<matchResultTile.length; i++){
             globezLayer.removeChild(tileArray[matchResultTile[i].row][matchResultTile[i].col]);
             tileArray[matchResultTile[i].row][matchResultTile[i].col]=null;
@@ -363,8 +450,11 @@ var touchListener = cc.EventListener.create({
         // create power tile
         for(var i=0; i<powerTileArray.length; i++){
             var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[powerTileArray[i].power][powerTileArray[i].val]);
-            sprite.val = powerTileArray[i].val;
             sprite.power = powerTileArray[i].power;
+            if(sprite.val = powerTileArray[i].power == 4)
+                sprite.val = 6;
+            else
+                sprite.val = powerTileArray[i].val;
             sprite.picked = false;
             sprite.setScale(0.55);
             globezLayer.addChild(sprite,1);
@@ -373,6 +463,8 @@ var touchListener = cc.EventListener.create({
         }
 
         this.fallTileAnimation();
+
+        return 0;
     },
 
     searchSameTile:function(){
@@ -388,6 +480,8 @@ var touchListener = cc.EventListener.create({
         // Delete Match Tile
         if(matchResultTile.length>=matchSize)
             this.deleteMatchTile();
+
+        return 0;
     },
 
     fallTileCreate: function(){
@@ -408,6 +502,8 @@ var touchListener = cc.EventListener.create({
                 }
             }
         }
+
+        return 0;
     },
 
     checkCollision:function(){
@@ -440,64 +536,76 @@ var touchListener = cc.EventListener.create({
             this.fallTileCreate();
             setTimeout(function(){
                 that.UpdateFunction();
+                return 0;
             }, 850);
         }
         else {
             currentMatchResultTile = [];
-        }        
+            play = true;
+        }
+
+        return 0;        
     },
 
     onMouseDown: function (event) {
-        pickedRow = Math.floor( (event._y - layer_posY) / tileSize);
-        pickedCol = Math.floor( (event._x - layer_posX) / tileSize);
+        if(play){
+            cc.log("play");
+            play = false;
+            pickedRow = Math.floor( (event._y - layer_posY) / tileSize);
+            pickedCol = Math.floor( (event._x - layer_posX) / tileSize);
 
-        if( (pickedRow >= 0 && pickedRow < fieldSize) && (pickedCol >= 0 && pickedCol < fieldSize) ){
-            tileArray[pickedRow][pickedCol].setOpacity(128);
-            tileArray[pickedRow][pickedCol].picked = true;
-            startColor = tileArray[pickedRow][pickedCol].val;
-            visitedTiles.push({
-                row: pickedRow,
-                col: pickedCol
-            });   
+            if( (pickedRow >= 0 && pickedRow < fieldSize) && (pickedCol >= 0 && pickedCol < fieldSize) ){
+                tileArray[pickedRow][pickedCol].setOpacity(128);
+                tileArray[pickedRow][pickedCol].picked = true;
+                startColor = tileArray[pickedRow][pickedCol].val;
+                visitedTiles.push({
+                    row: pickedRow,
+                    col: pickedCol
+                });   
+            }
         }
     },
 
     onMouseUp: function(event){
-        startColor=null;
-        resultFlag = true;
-        if (visitedTiles.length == 2){ 
-            this.swapCandyAnimation();
+        if(startColor!=null){
+            startColor=null;
+            resultFlag = true;
+            if (visitedTiles.length == 2){ 
+                this.swapCandyAnimation();
 
-            var that = this;
-
-            setTimeout(function(){
-                // matchResultTile Array process
-                that.searchSameTile();
-                if(resultFlag)
-                    that.swapCandyAnimation();
-                else{
-                    // New tile create after remove
-                    that.fallTileCreate(); // 0.75 second
-                    
-                    setTimeout(function(){
-                        that.UpdateFunction();
-                    },850);
-                }
+                var that = this;
 
                 setTimeout(function(){
-                        visitedTiles = [];
-                },350);
-                
+                    // matchResultTile Array process
+                    that.searchSameTile();
+                    if(resultFlag)
+                        that.swapCandyAnimation();
+                    else{
+                        // New tile create after remove
+                        that.fallTileCreate(); // 0.75 second
+                        
+                        setTimeout(function(){
+                            that.UpdateFunction();
+                        },850);
+                    }
 
-            },300);
-        }
-        else{
-            if( (pickedRow >= 0 && pickedRow < fieldSize) && (pickedCol >= 0 && pickedCol < fieldSize) ){
-                tileArray[visitedTiles[0].row][visitedTiles[0].col].setOpacity(255);
-                tileArray[visitedTiles[0].row][visitedTiles[0].col].picked=false;
-                visitedTiles = [];
+                    setTimeout(function(){
+                            visitedTiles = [];
+                            play = true;
+                    },350);
+                    
+
+                },300);
             }
-        }         
+            else{
+                if( (pickedRow >= 0 && pickedRow < fieldSize) && (pickedCol >= 0 && pickedCol < fieldSize) ){
+                    tileArray[visitedTiles[0].row][visitedTiles[0].col].setOpacity(255);
+                    tileArray[visitedTiles[0].row][visitedTiles[0].col].picked=false;
+                    visitedTiles = [];
+                    play = true;
+                }
+            }
+        }
     },
 
     onMouseMove: function(event){
