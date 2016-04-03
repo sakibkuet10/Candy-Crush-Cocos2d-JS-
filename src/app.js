@@ -4,8 +4,8 @@ var tileSize = 60;
 var tileArray = [];
 var tileImage=[];
 var tileImageBack = "res/tile.png";
-var tileTypes = ["red", "green", "blue", "pink", "sky", "white"];
-//var tileTypes = ["red", "green", "blue", "pink"];
+//var tileTypes = ["red", "green", "blue", "pink", "sky", "white"];
+var tileTypes = ["red", "green", "blue", "pink"];
 
 var layer_posX, layer_posY;
 
@@ -214,57 +214,89 @@ var touchListener = cc.EventListener.create({
         return 0;
     },
 
+    powerCandyCreate: function(R, C, val, power){
+        var rand;
+        if(power<3)
+            rand = Math.floor(Math.random()*2);
+        else
+            rand = 2;
+        var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[rand+1][val]);
+        sprite.power = rand + 1;
+        sprite.val = val;
+        sprite.picked = false;
+        sprite.setScale(0.55);
+        globezLayer.addChild(sprite,1);
+        sprite.setPosition(C*tileSize+tileSize/2,R*tileSize+tileSize/2);
+        tileArray[R][C] = sprite;
+    },
+
     powerHorizontal: function(R, C){
+        cc.log("powerHorizontal");
         for(var i=0; i<fieldSize; i++){
-            matchResultTile.push({
-                row: R,
-                col: i
-            });
-            if(tileArray[R][i].power == 1)
-                this.powerVertical(R, i);
-            else if (tileArray[R][i].power == 3)
-                this.powerCandy(R, i);
-            else if (tileArray[R][i].power == 4)
-                this.powerJumbo(R, i, tileArray[R][C].val);
+            if(this.notInMatchResultTile(R, i)){
+                matchResultTile.push({
+                    row: R,
+                    col: i
+                });
+
+                if(tileArray[R][i].power == 1)
+                    this.powerVertical(R, i);
+                else if (tileArray[R][i].power == 3)
+                    this.powerCandy(R, i);
+                else if (tileArray[R][i].power == 4)
+                    this.powerJumbo(R, C, tileArray[R][C].val);
+            }
         }
 
         return 0;
     },
 
     powerVertical: function(R, C){
+        cc.log("powerVertical");
         for(var i=0; i<fieldSize; i++){
-            matchResultTile.push({
-                row: i,
-                col: C
-            });
-            if(tileArray[i][C].power == 2)
-                this.powerHorizontal(i, C);
-            else if (tileArray[i][C].power == 3)
-                this.powerCandy(i, C);
-            else if (tileArray[i][C].power == 4)
-                this.powerJumbo(i, C, tileArray[R][C].val);
+            if(this.notInMatchResultTile(i,C)){    
+                matchResultTile.push({
+                    row: i,
+                    col: C
+                });
+
+                if(tileArray[i][C].power == 2)
+                    this.powerHorizontal(i, C);
+                else if (tileArray[i][C].power == 3)
+                    this.powerCandy(i, C);
+                else if (tileArray[i][C].power == 4)
+                    this.powerJumbo(R, C, tileArray[R][C].val);
+            }
         }
 
         return 0;
     },
 
     powerCandy: function(R, C){
+        cc.log("powerCandy");
+
+        matchResultTile.push({
+            row: R,
+            col: C
+        });
         var dircCandy = [[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1],[1,0]];
         for(var i=0; i<dircCandy.length; i++){
             if( (dircCandy[i][0]+R >= 0 && dircCandy[i][0]+R < fieldSize) && (dircCandy[i][1]+C >= 0 && dircCandy[i][1]+C < fieldSize) ){
-                matchResultTile.push({
-                    row: dircCandy[i][0]+R,
-                    col: dircCandy[i][1]+C
-                });
+                if(this.notInMatchResultTile(dircCandy[i][0]+R, dircCandy[i][1]+C)){
+                    matchResultTile.push({
+                        row: dircCandy[i][0]+R,
+                        col: dircCandy[i][1]+C
+                    });
 
-                if(tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 1)
-                    this.powerVertical(dircCandy[i][0]+R, dircCandy[i][1]+C);
-                else if(tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 2)
-                    this.powerHorizontal(dircCandy[i][0]+R, dircCandy[i][1]+C);
-                else if (tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 3)
-                    this.powerCandy(dircCandy[i][0]+R, dircCandy[i][1]+C);
-                else if (tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 4)
-                    this.powerJumbo(dircCandy[i][0]+R, dircCandy[i][1]+C, tileArray[R][C].val);
+                    if(tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 1)
+                        this.powerVertical(dircCandy[i][0]+R, dircCandy[i][1]+C);
+                    else if(tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 2)
+                        this.powerHorizontal(dircCandy[i][0]+R, dircCandy[i][1]+C);
+                    else if (tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 3)
+                        this.powerCandy(dircCandy[i][0]+R, dircCandy[i][1]+C);
+                    else if (tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 4)
+                        this.powerJumbo(R, C, tileArray[R][C].val);
+                }
             }
         }
 
@@ -272,15 +304,151 @@ var touchListener = cc.EventListener.create({
     },
 
     powerJumbo: function(R, C, val){
+        cc.log("powerJumbo");
+
+        matchResultTile.push({
+            row: R,
+            col: C
+        });
+
         for(var i=0; i<fieldSize; i++){
             for(var j=0; j<fieldSize; j++){
                 if(tileArray[i][j].val == val){
-                    matchResultTile.push({
-                    row: i,
-                    col: j
-                });
+                    if(this.notInMatchResultTile(i,j)){
+                        matchResultTile.push({
+                            row: i,
+                            col: j,
+                            val: tileArray[i][j].val
+                        });
+
+                        if(tileArray[i][j].power == 1)
+                            this.powerVertical(i, j);
+                        else if(tileArray[i][j].power == 2)
+                            this.powerHorizontal(i, j);
+                        else if (tileArray[i][j].power == 3)
+                            this.powerCandy(i, j);
+                    }
                 }
             }
+        }
+
+        return 0;
+    },
+
+    powerCandyClash:function(r1, c1, r2, c2){
+        cc.log("powerCandyClash");
+        resultFlag = false;
+
+        if(tileArray[r1][c1].power == 4 && tileArray[r2][c2].power == 4){
+            var rand = Math.floor(Math.random()*tileTypes.length);
+            this.powerJumbo(r1, c1, rand);
+            var rand = Math.floor(Math.random()*tileTypes.length);
+            this.powerJumbo(r1, c1, rand);            
+        }
+        else if(tileArray[r1][c1].power == 3 && tileArray[r2][c2].power == 3){
+            this.powerCandy(r1, c1);
+            this.powerCandy(r2, c2);
+        }
+        else if(tileArray[r1][c1].power == 2 && tileArray[r2][c2].power == 2){
+            this.powerHorizontal(r1, c1);
+            this.powerVertical(r2, c2);
+        }
+        else if(tileArray[r1][c1].power == 1 && tileArray[r2][c2].power == 1){
+            this.powerVertical(r1, c1);
+            this.powerHorizontal(r2, c2);
+        }
+        else if((tileArray[r1][c1].power == 4 && (tileArray[r2][c2].power == 1 || tileArray[r2][c2].power == 2) ) || ((tileArray[r2][c2].power == 1 || tileArray[r2][c2].power == 2) && tileArray[r2][c2].power == 4)){
+            if(tileArray[r1][c1].power == 4){
+                this.powerJumbo(r1, c1, tileArray[r2][c2].val);
+
+                for(var i=0; i<matchResultTile.length; i++){
+                    globezLayer.removeChild(tileArray[matchResultTile[i].row][matchResultTile[i].col]);
+                    tileArray[matchResultTile[i].row][matchResultTile[i].col]=null;
+                }
+
+                for(var i=0; i<matchResultTile.length; i++)
+                    this.powerCandyCreate(matchResultTile[i].row, matchResultTile[i].col, matchResultTile[i].val, 1);
+
+                var temp = matchResultTile;
+
+                for(var i=0; i<temp.length; i++){
+                    if(tileArray[temp[i].row][temp[i].col].power == 1)
+                        this.powerVertical(temp[i].row, temp[i].col);
+                    else
+                        this.powerHorizontal(temp[i].row, temp[i].col);
+                }
+            }
+            else{
+                this.powerJumbo(r2, c2, tileArray[r1][c1].val);
+
+                for(var i=0; i<matchResultTile.length; i++){
+                    globezLayer.removeChild(tileArray[matchResultTile[i].row][matchResultTile[i].col]);
+                    tileArray[matchResultTile[i].row][matchResultTile[i].col]=null;
+                }
+
+                for(var i=0; i<matchResultTile.length; i++)
+                    this.powerCandyCreate(matchResultTile[i].row, matchResultTile[i].col, matchResultTile[i].val, 1);
+
+                var temp = matchResultTile;
+
+                for(var i=0; i<temp.length; i++){
+                    if(tileArray[temp[i].row][temp[i].col].power == 1)
+                        this.powerVertical(temp[i].row, temp[i].col);
+                    else
+                        this.powerHorizontal(temp[i].row, temp[i].col);
+                }
+            }
+        }
+
+        else if((tileArray[r1][c1].power == 4 && tileArray[r2][c2].power == 3) || (tileArray[r1][c1].power == 3 && tileArray[r2][c2].power == 4)){
+            if(tileArray[r1][c1].power == 4){
+                this.powerJumbo(r1, c1, tileArray[r2][c2].val);
+
+                for(var i=0; i<matchResultTile.length; i++){
+                    globezLayer.removeChild(tileArray[matchResultTile[i].row][matchResultTile[i].col]);
+                    tileArray[matchResultTile[i].row][matchResultTile[i].col]=null;
+                }
+
+                for(var i=0; i<matchResultTile.length; i++)
+                    this.powerCandyCreate(matchResultTile[i].row, matchResultTile[i].col, matchResultTile[i].val, 3);
+
+                 var temp = matchResultTile;
+
+                for(var i=0; i<temp.length; i++)
+                    this.powerCandy(temp[i].row, temp[i].col);
+
+            }
+            else{
+                this.powerJumbo(r2, c2, tileArray[r1][c1].val);
+
+                for(var i=0; i<matchResultTile.length; i++){
+                    globezLayer.removeChild(tileArray[matchResultTile[i].row][matchResultTile[i].col]);
+                    tileArray[matchResultTile[i].row][matchResultTile[i].col]=null;
+                }
+
+                for(var i=0; i<matchResultTile.length; i++)
+                    this.powerCandyCreate(matchResultTile[i].row, matchResultTile[i].col, matchResultTile[i].val, 3);
+
+                for(var i=0; i<temp.length; i++)
+                    this.powerCandy(temp[i].row, temp[i].col);
+
+            }
+        }
+        else if((tileArray[r1][c1].power == 3 && tileArray[r2][c2].power == 2) || (tileArray[r1][c1].power == 2 && tileArray[r2][c2].power == 3)){
+            this.powerHorizontal(r1, c1);
+            this.powerHorizontal(r2, c2);
+            this.powerVertical(r1, c1);
+            this.powerVertical(r2, c2);
+        }
+        else if((tileArray[r1][c1].power == 3 && tileArray[r2][c2].power == 1) || (tileArray[r1][c1].power == 1 && tileArray[r2][c2].power == 3)){
+            this.powerHorizontal(r1, c1);
+            this.powerHorizontal(r2, c2);
+            this.powerVertical(r1, c1);
+            this.powerVertical(r2, c2);
+        }
+        else if((tileArray[r1][c1].power == 1 && tileArray[r2][c2].power == 2) || (tileArray[r1][c1].power == 2 && tileArray[r2][c2].power == 1)){
+            this.powerVertical(r1, c1);
+            this.powerHorizontal(r2, c2);
         }
 
         return 0;
@@ -304,7 +472,7 @@ var touchListener = cc.EventListener.create({
                     this.powerVertical( matchVerticalTile[i].row, matchVerticalTile[i].col);
                 else if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 2)
                     this.powerHorizontal(matchVerticalTile[i].row, matchVerticalTile[i].row);
-                if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 3 )
+                else if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 3 )
                     this.powerCandy(matchVerticalTile[i].row, matchVerticalTile[i].col);
                 else
                     matchResultTile.push(matchVerticalTile[i]);
@@ -329,21 +497,17 @@ var touchListener = cc.EventListener.create({
                 }
             }
         }
+
         else if(matchHorizontalTile.length >= matchSize){
             for(var i=0; i<matchHorizontalTile.length; i++){
-                if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 2 ){
+                if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 2 )
                     this.powerHorizontal(matchHorizontalTile[i].row, matchHorizontalTile[i].col);
-                }
-                else if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 1 ){
+                else if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 1 )
                     this.powerVertical(matchHorizontalTile[i].row, matchHorizontalTile[i].col);
-                }
+                else if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 3 )
+                    this.powerCandy(matchHorizontalTile[i].row, matchHorizontalTile[i].col);
                 else
                     matchResultTile.push(matchHorizontalTile[i]);
-
-                if(tileArray[matchHorizontalTile[i].row][matchHorizontalTile[i].col].power == 3 ){
-                    cc.log("powerCandy");
-                    this.powerCandy(matchHorizontalTile[i].row, matchHorizontalTile[i].col);
-                }
             }
 
             if(matchHorizontalTile.length == 4){
@@ -366,17 +530,14 @@ var touchListener = cc.EventListener.create({
 
         else if(matchVerticalTile.length >= matchSize){
             for(var i=0; i<matchVerticalTile.length; i++){
-                if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 1){
+                if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 1)
                     this.powerVertical(matchVerticalTile[i].row, matchVerticalTile[i].col);
-                }
-                else if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 2){
+                else if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 2)
                     this.powerHorizontal(matchVerticalTile[i].row, matchVerticalTile[i].col);
-                }
+                else if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 3 )
+                    this.powerCandy(matchVerticalTile[i].row, matchVerticalTile[i].col);
                 else
                     matchResultTile.push(matchVerticalTile[i]);
-
-                if(tileArray[matchVerticalTile[i].row][matchVerticalTile[i].col].power == 3 )
-                    this.powerCandy(matchVerticalTile[i].row, matchVerticalTile[i].col);
             }
 
             if(matchVerticalTile.length == 4){
@@ -471,12 +632,23 @@ var touchListener = cc.EventListener.create({
         matchResultTile = [];
         powerTileArray = [];
 
-        this.searchMatchTile(visitedTiles[0].row, visitedTiles[0].col);
-        this.process_matchResultTile();
+        // compare for power candy clash
 
-        this.searchMatchTile(visitedTiles[1].row, visitedTiles[1].col);
-        this.process_matchResultTile();
+        if(tileArray[visitedTiles[0].row][visitedTiles[0].col].power > 0 && tileArray[visitedTiles[1].row][visitedTiles[1].col].power > 0)
+            this.powerCandyClash(visitedTiles[0].row, visitedTiles[0].col, visitedTiles[1].row, visitedTiles[1].col);
+        else if(tileArray[visitedTiles[0].row][visitedTiles[0].col].power == 4 || tileArray[visitedTiles[1].row][visitedTiles[1].col].power == 4){
+            if(tileArray[visitedTiles[0].row][visitedTiles[0].col].power == 4)
+                this.powerJumbo(visitedTiles[0].row, visitedTiles[0].col, tileArray[visitedTiles[1].row][visitedTiles[1].col].val);
+            else
+                this.powerJumbo(visitedTiles[1].row, visitedTiles[1].col, tileArray[visitedTiles[0].row][visitedTiles[0].col].val)
+        }
+        else{
+            this.searchMatchTile(visitedTiles[0].row, visitedTiles[0].col);
+            this.process_matchResultTile();
 
+            this.searchMatchTile(visitedTiles[1].row, visitedTiles[1].col);
+            this.process_matchResultTile();
+        }
         // Delete Match Tile
         if(matchResultTile.length>=matchSize)
             this.deleteMatchTile();
@@ -526,6 +698,7 @@ var touchListener = cc.EventListener.create({
     },
 
     UpdateFunction: function(){
+        play = false;
         var that = this;
         //cc.log("Guti Baj Talha");
         currentMatchResultTile = [];
@@ -549,7 +722,6 @@ var touchListener = cc.EventListener.create({
 
     onMouseDown: function (event) {
         if(play){
-            cc.log("play");
             play = false;
             pickedRow = Math.floor( (event._y - layer_posY) / tileSize);
             pickedCol = Math.floor( (event._x - layer_posX) / tileSize);
@@ -582,19 +754,15 @@ var touchListener = cc.EventListener.create({
                         that.swapCandyAnimation();
                     else{
                         // New tile create after remove
-                        that.fallTileCreate(); // 0.75 second
-                        
+                        that.fallTileCreate(); // 0.75 second   
                         setTimeout(function(){
                             that.UpdateFunction();
                         },850);
                     }
-
                     setTimeout(function(){
-                            visitedTiles = [];
-                            play = true;
+                        visitedTiles = [];
+                        play = true;
                     },350);
-                    
-
                 },300);
             }
             else{
