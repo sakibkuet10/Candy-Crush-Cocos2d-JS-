@@ -24,6 +24,8 @@ var currentMatchResultTile;
 var powerTileArray = [];
 var play = false;
 
+var gold_count = 1;
+var gold_egg_collect = [];
 var HelloWorldLayer = cc.Layer.extend({
     sprite:null,
     ctor:function () {
@@ -98,19 +100,34 @@ var HelloWorldLayer = cc.Layer.extend({
     },
 
     addTile:function(row,col){
-        var randomTile = Math.floor(Math.random()*tileTypes.length);
-        var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[0][randomTile]);
-        sprite.val = randomTile;
-        sprite.power = 0;
-        sprite.picked = false;
-        sprite.setScale(0.55);
-        globezLayer.addChild(sprite,1);
-        sprite.setPosition(col*tileSize+tileSize/2,row*tileSize+tileSize/2);
-        tileArray[row][col] = sprite;
+        if(gold_count%46 == 0){
+            gold_count = 0;
+            var sprite = cc.Sprite.createWithSpriteFrame( "res/egg.png");
+            sprite.val = "egg";
+            sprite.power = "egg";
+            sprite.picked = false;
+            sprite.setScale(0.40);
+            globezLayer.addChild(sprite,1);
+            sprite.setPosition(col*tileSize+tileSize/2,row*tileSize+tileSize/2);
+            tileArray[row][col] = sprite;
+
+        }
+        else{
+            var randomTile = Math.floor(Math.random()*tileTypes.length);
+            var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[0][randomTile]);
+            sprite.val = randomTile;
+            sprite.power = 0;
+            sprite.picked = false;
+            sprite.setScale(0.55);
+            globezLayer.addChild(sprite,1);
+            sprite.setPosition(col*tileSize+tileSize/2,row*tileSize+tileSize/2);
+            tileArray[row][col] = sprite;
+        }
 
         var sprite = new cc.Sprite.create(tileImageBack);
         sprite.setPosition(col*tileSize+tileSize/2,row*tileSize+tileSize/2);
         tileImageBacklayer.addChild(sprite,0);
+        gold_count++;
     },
 });
 
@@ -231,9 +248,8 @@ var touchListener = cc.EventListener.create({
     },
 
     powerHorizontal: function(R, C){
-        cc.log("powerHorizontal");
         for(var i=0; i<fieldSize; i++){
-            if(this.notInMatchResultTile(R, i)){
+            if(this.notInMatchResultTile(R, i) && tileArray[R][i].val != "egg"){
                 matchResultTile.push({
                     row: R,
                     col: i
@@ -252,9 +268,8 @@ var touchListener = cc.EventListener.create({
     },
 
     powerVertical: function(R, C){
-        cc.log("powerVertical");
         for(var i=0; i<fieldSize; i++){
-            if(this.notInMatchResultTile(i,C)){    
+            if(this.notInMatchResultTile(i,C) && tileArray[i][C].val != "egg"){    
                 matchResultTile.push({
                     row: i,
                     col: C
@@ -282,7 +297,7 @@ var touchListener = cc.EventListener.create({
         var dircCandy = [[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1],[1,0]];
         for(var i=0; i<dircCandy.length; i++){
             if( (dircCandy[i][0]+R >= 0 && dircCandy[i][0]+R < fieldSize) && (dircCandy[i][1]+C >= 0 && dircCandy[i][1]+C < fieldSize) ){
-                if(this.notInMatchResultTile(dircCandy[i][0]+R, dircCandy[i][1]+C)){
+                if(this.notInMatchResultTile(dircCandy[i][0]+R, dircCandy[i][1]+C) && tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].val != "egg"){
                     matchResultTile.push({
                         row: dircCandy[i][0]+R,
                         col: dircCandy[i][1]+C
@@ -304,8 +319,6 @@ var touchListener = cc.EventListener.create({
     },
 
     powerJumbo: function(R, C, val){
-        cc.log("powerJumbo");
-
         matchResultTile.push({
             row: R,
             col: C
@@ -314,7 +327,7 @@ var touchListener = cc.EventListener.create({
         for(var i=0; i<fieldSize; i++){
             for(var j=0; j<fieldSize; j++){
                 if(tileArray[i][j].val == val){
-                    if(this.notInMatchResultTile(i,j)){
+                    if(this.notInMatchResultTile(i,j) && tileArray[i][j].val != "egg"){
                         matchResultTile.push({
                             row: i,
                             col: j,
@@ -336,7 +349,6 @@ var touchListener = cc.EventListener.create({
     },
 
     powerCandyClash:function(r1, c1, r2, c2){
-        cc.log("powerCandyClash");
         resultFlag = false;
 
         if(tileArray[r1][c1].power == 4 && tileArray[r2][c2].power == 4){
@@ -414,6 +426,7 @@ var touchListener = cc.EventListener.create({
 
                 var temp = matchResultTile;
                 matchResultTile = [];
+                
                 for(var i=0; i<temp.length; i++)
                     this.powerCandyCreate(temp[i].row, temp[i].col, temp[i].val, 3);
 
@@ -430,6 +443,7 @@ var touchListener = cc.EventListener.create({
 
                 var temp = matchResultTile;
                 matchResultTile = [];
+
                 for(var i=0; i<temp.length; i++)
                     this.powerCandyCreate(temp[i].row, temp[i].col, temp[i].val, 3);
 
@@ -565,17 +579,33 @@ var touchListener = cc.EventListener.create({
     },
 
     fallTile:function(row,col,height){
-        var randomTile = Math.floor(Math.random()*tileTypes.length);
-        var sprite = cc.Sprite.createWithSpriteFrame("res/candy.png" ,tileImage[0][randomTile]);
-        sprite.val = randomTile;
-        sprite.power = 0;
-        sprite.picked = false;
-        sprite.setScale(0.55);
-        globezLayer.addChild(sprite,0);
-        sprite.setPosition(col*tileSize+tileSize/2,(fieldSize+height)*tileSize);
-        var moveAction = cc.MoveTo.create(0.75, new cc.Point(col*tileSize+tileSize/2,row*tileSize+tileSize/2));
-        sprite.runAction(moveAction);
-        tileArray[row][col] = sprite;
+        if(gold_count%46 == 0){
+            var sprite = cc.Sprite.createWithSpriteFrame("res/egg.png");
+            sprite.val = "egg";
+            sprite.power = "egg";
+            sprite.picked = false;
+            sprite.setScale(0.40);
+            globezLayer.addChild(sprite,0);
+            sprite.setPosition(col*tileSize+tileSize/2,(fieldSize+height)*tileSize);
+            var moveAction = cc.MoveTo.create(0.75, new cc.Point(col*tileSize+tileSize/2,row*tileSize+tileSize/2));
+            sprite.runAction(moveAction);
+            tileArray[row][col] = sprite;
+        }
+        else{
+            var randomTile = Math.floor(Math.random()*tileTypes.length);
+            var sprite = cc.Sprite.createWithSpriteFrame("res/candy.png" ,tileImage[0][randomTile]);
+            sprite.val = randomTile;
+            sprite.power = 0;
+            sprite.picked = false;
+            sprite.setScale(0.55);
+            globezLayer.addChild(sprite,0);
+            sprite.setPosition(col*tileSize+tileSize/2,(fieldSize+height)*tileSize);
+            var moveAction = cc.MoveTo.create(0.75, new cc.Point(col*tileSize+tileSize/2,row*tileSize+tileSize/2));
+            sprite.runAction(moveAction);
+            tileArray[row][col] = sprite;
+        }
+
+        gold_count++;
 
         return 0;
     },
@@ -694,16 +724,42 @@ var touchListener = cc.EventListener.create({
         }
 
         // Delete Match Tile
-        if(matchResultTile.length>=matchSize)
+        if(matchResultTile.length>=matchSize){
+            this.collect_egg();
+            for(var i=0; i<gold_egg_collect.length; i++)
+                matchResultTile.push(gold_egg_collect[i]);
             return true;
+        }
+        else if(this.collect_egg()){
+            matchResultTile = [];
+            for(var i=0; i<gold_egg_collect.length; i++)
+                matchResultTile.push(gold_egg_collect[i]);
+            return true;
+        }
 
         return false;
+    },
+
+    collect_egg: function(){
+        gold_egg_collect = [];
+        var egg = false;
+        for(var i=0; i<fieldSize; i++)
+            if(tileArray[0][i] != null)
+                if(tileArray[0][i].val == "egg"){
+                    // globezLayer.removeChild(tileArray[0][i]);
+                    // tileArray[0][i]=null;
+                    gold_egg_collect.push({
+                        row: 0,
+                        col: i
+                    });
+                    egg = true;
+                }
+        return egg;
     },
 
     UpdateFunction: function(){
         play = false;
         var that = this;
-        //cc.log("Guti Baj Talha");
         currentMatchResultTile = [];
         currentMatchResultTile = matchResultTile;
 
@@ -719,7 +775,6 @@ var touchListener = cc.EventListener.create({
             currentMatchResultTile = [];
             play = true;
         }
-
         return 0;        
     },
 
