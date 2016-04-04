@@ -292,8 +292,8 @@ var touchListener = cc.EventListener.create({
                         this.powerVertical(dircCandy[i][0]+R, dircCandy[i][1]+C);
                     else if(tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 2)
                         this.powerHorizontal(dircCandy[i][0]+R, dircCandy[i][1]+C);
-                    else if (tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 3)
-                        this.powerCandy(dircCandy[i][0]+R, dircCandy[i][1]+C);
+                    // else if (tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 3)
+                    //     this.powerCandy(dircCandy[i][0]+R, dircCandy[i][1]+C);
                     else if (tileArray[dircCandy[i][0]+R][dircCandy[i][1]+C].power == 4)
                         this.powerJumbo(R, C, tileArray[R][C].val);
                 }
@@ -344,6 +344,10 @@ var touchListener = cc.EventListener.create({
             this.powerJumbo(r1, c1, rand);
             var rand = Math.floor(Math.random()*tileTypes.length);
             this.powerJumbo(r2, c2, rand);            
+            var rand = Math.floor(Math.random()*tileTypes.length);
+            this.powerJumbo(r1, c1, rand);
+            var rand = Math.floor(Math.random()*tileTypes.length);
+            this.powerJumbo(r2, c2, rand);
         }
         else if(tileArray[r1][c1].power == 3 && tileArray[r2][c2].power == 3){
             this.powerCandy(r1, c1);
@@ -397,7 +401,6 @@ var touchListener = cc.EventListener.create({
                         this.powerHorizontal(temp[i].row, temp[i].col);
                 }
             }
-            matchResultTile = [];
         }
 
         else if((tileArray[r1][c1].power == 4 && tileArray[r2][c2].power == 3) || (tileArray[r1][c1].power == 3 && tileArray[r2][c2].power == 4)){
@@ -409,16 +412,13 @@ var touchListener = cc.EventListener.create({
                     tileArray[matchResultTile[i].row][matchResultTile[i].col]=null;
                 }
 
-                 var temp = matchResultTile;
+                var temp = matchResultTile;
+                matchResultTile = [];
                 for(var i=0; i<temp.length; i++)
                     this.powerCandyCreate(temp[i].row, temp[i].col, temp[i].val, 3);
 
                 for(var i=0; i<temp.length; i++)
                     this.powerCandy(temp[i].row, temp[i].col);
-
-                // cc.log(matchResultTile);
-                matchResultTile = [];
-
             }
             else{
                 this.powerJumbo(r2, c2, tileArray[r1][c1].val);
@@ -428,17 +428,13 @@ var touchListener = cc.EventListener.create({
                     tileArray[matchResultTile[i].row][matchResultTile[i].col]=null;
                 }
 
-                 var temp = matchResultTile;
+                var temp = matchResultTile;
+                matchResultTile = [];
                 for(var i=0; i<temp.length; i++)
                     this.powerCandyCreate(temp[i].row, temp[i].col, temp[i].val, 3);
 
                 for(var i=0; i<temp.length; i++)
                     this.powerCandy(temp[i].row, temp[i].col);
-
-
-                // cc.log(matchResultTile);
-                matchResultTile = [];
-
             }
         }
         else if((tileArray[r1][c1].power == 3 && tileArray[r2][c2].power == 2) || (tileArray[r1][c1].power == 2 && tileArray[r2][c2].power == 3)){
