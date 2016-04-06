@@ -1,5 +1,5 @@
 var matchSize = 3;
-var fieldSize = 7;
+var fieldSize = 5;
 var tileSize = 60;
 var tileArray = [];
 var tileImage=[];
@@ -19,13 +19,15 @@ var matchHorizontalTile = [];
 var matchVerticalTile = [];
 var matchResultTile = [];
 var resultFlag = true;
-var currentMatchResultTile;
+var checkCollisionTile = [];
 
 var powerTileArray = [];
 var play = false;
 
-var gold_count = 1;
+var gold_count = 0;
 var gold_egg_collect = [];
+
+var shuffelElement = [];
 
 var HelloWorldLayer = cc.Layer.extend({
     sprite:null,
@@ -78,7 +80,7 @@ var HelloWorldLayer = cc.Layer.extend({
 
         // Auto match for First Loading
         for(var i=0; i<fieldSize; i++){
-            matchResultTile.push({
+            checkCollisionTile.push({
                 row: 0,
                 col: i,
                 val: tileArray[0][i].val
@@ -101,9 +103,9 @@ var HelloWorldLayer = cc.Layer.extend({
     },
 
     addTile:function(row,col){
-        if(gold_count%46 == 0){
+        if(gold_count == 45){
             gold_count = 0;
-            var sprite = cc.Sprite.createWithSpriteFrame( "res/egg.png");
+            var sprite = cc.Sprite.createWithSpriteFrame("res/egg.png");
             sprite.val = "egg";
             sprite.power = "egg";
             sprite.picked = false;
@@ -111,11 +113,10 @@ var HelloWorldLayer = cc.Layer.extend({
             globezLayer.addChild(sprite,1);
             sprite.setPosition(col*tileSize+tileSize/2,row*tileSize+tileSize/2);
             tileArray[row][col] = sprite;
-
         }
         else{
             var randomTile = Math.floor(Math.random()*tileTypes.length);
-            var sprite = cc.Sprite.createWithSpriteFrame( "res/candy.png" ,tileImage[0][randomTile]);
+            var sprite = cc.Sprite.createWithSpriteFrame("res/candy.png" ,tileImage[0][randomTile]);
             sprite.val = randomTile;
             sprite.power = 0;
             sprite.picked = false;
@@ -137,6 +138,75 @@ var pickedCol;
 
 var touchListener = cc.EventListener.create({
     event: cc.EventListener.MOUSE,
+
+    checkShuffelDirection: function(R, C){
+        var shuffelDirc = [ [[0,1],[1,2]], [[0,1],[-1,2]], [[0,-1],[1,-2]], [[0,-1],[-1,-2]], [[1,0],[2,1]], [[1,0],[2,-1]], [[-1,0],[-2,1]], [[-1,0],[-2,-1]], [[1,1],[1,-1]], [[-1,1],[-1,-1]], [[1,1],[-1,1]], [[1,-1],[-1,-1]], [[0,1],[0,-2]], [[0,-1],[0,2]], [[1,0],[-2,0]], [[-1,0],[2,0]] ];
+        for (var i = 0; i < shuffelDirc.length; i++) {
+            var count = 0;
+            for (var j = 0; j < shuffelDirc[i].length; j++){
+                if( (shuffelDirc[i][j][0]+R >= 0 &&  shuffelDirc[i][j][0]+R < fieldSize) && (shuffelDirc[i][j][1]+C >= 0 &&  shuffelDirc[i][j][1]+C < fieldSize) )
+                    if(tileArray[shuffelDirc[i][j][0]+R][shuffelDirc[i][j][1]+C].val == tileArray[R][C].val)
+                        count++;
+            }
+            if(count >= 2)   return true;
+        }
+        return false;
+    },
+
+    IsShuffelNeed: function(){
+        shuffelElement = [];
+        for(var i=0; i<fieldSize; i++){
+            shuffelElement[i] = [];
+            for(var j=0; j<fieldSize; j++){
+                if(this.checkShuffelDirection(i,j))
+                    return false;
+                shuffelElement[i].push({
+                    row: i,
+                    col:j
+                });
+            }
+        }
+        return true;
+    },
+
+    Shuffel: function(o){
+        for(var j, x, i = o.length; i; j = parseInt(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
+        return o;
+    },
+
+    doShuffel: function(){
+        var tempTile = tileArray;
+        this.Shuffel(tempTile);
+
+        for(var i=0; i<fieldSize; i++){
+            for(var j=0; j<fieldSize; j++){
+                var sprite;
+
+                if(tempTile[i][j].val == "egg"){
+                    sprite = cc.Sprite.createWithSpriteFrame("res/egg.png");
+                    sprite.val = "egg";
+                    sprite.power = "egg";
+                    sprite.picked = false;
+                    sprite.setScale(0.40);
+                }
+                else{
+                    sprite = cc.Sprite.createWithSpriteFrame("res/candy.png" ,tileImage[tempTile[i][j].power][tempTile[i][j].val]);
+                    sprite.val = tempTile[i][j].val;
+                    sprite.power = tempTile[i][j].power;
+                    sprite.picked = false;
+                    sprite.setScale(0.55);
+                }
+                globezLayer.addChild(sprite,1);
+                sprite.setPosition(j*tileSize+tileSize/2,i*tileSize+tileSize/2);
+
+                globezLayer.removeChild(tileArray[i][j]);
+                tileArray[i][j] = null;
+                                
+                tileArray[i][j] = sprite;
+            }
+        }
+
+    },
 
     swapCandyAnimation: function(){
 
@@ -579,7 +649,8 @@ var touchListener = cc.EventListener.create({
     },
 
     fallTile:function(row,col,height){
-        if(gold_count%46 == 0){
+        if(gold_count == 50){
+            gold_count = 0;
             var sprite = cc.Sprite.createWithSpriteFrame("res/egg.png");
             sprite.val = "egg";
             sprite.power = "egg";
@@ -714,11 +785,11 @@ var touchListener = cc.EventListener.create({
     checkCollision:function(){
         matchResultTile = [];
         powerTileArray = [];
-        for(var i=0; i<currentMatchResultTile.length; i++){
-            for(var j=currentMatchResultTile[i].row; j<fieldSize; j++){
+        for(var i=0; i<checkCollisionTile.length; i++){
+            for(var j=checkCollisionTile[i].row; j<fieldSize; j++){
                 matchHorizontalTile = [];
                 matchVerticalTile = [];
-                this.searchMatchTile(j, currentMatchResultTile[i].col);
+                this.searchMatchTile(j, checkCollisionTile[i].col);
                 this.process_matchResultTile();
             }
         }
@@ -760,8 +831,8 @@ var touchListener = cc.EventListener.create({
     UpdateFunction: function(){
         play = false;
         var that = this;
-        currentMatchResultTile = [];
-        currentMatchResultTile = matchResultTile;
+        // checkCollisionTile = [];
+        // checkCollisionTile = matchResultTile;
 
         if(this.checkCollision()){
             this.deleteMatchTile();
@@ -772,8 +843,16 @@ var touchListener = cc.EventListener.create({
             }, 850);
         }
         else {
-            currentMatchResultTile = [];
+            //checkCollisionTile = [];
             play = true;
+
+            if(this.IsShuffelNeed()){
+                cc.log("Shuffel Need");
+                this.doShuffel();
+                //this.UpdateFunction();
+            }
+            else
+                cc.log("Shuffel NOT Need");
         }
         return 0;        
     },
