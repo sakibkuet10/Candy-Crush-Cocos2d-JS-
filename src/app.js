@@ -1,5 +1,5 @@
 var matchSize = 3;
-var fieldSize = 5;
+var fieldSize = 7;
 var tileSize = 60;
 var tileArray = [];
 var tileImage=[];
@@ -29,6 +29,16 @@ var gold_egg_collect = [];
 
 var shuffelElement = [];
 
+var current_gold_egg_number = 0;
+var need_gold_egg_number = 3;
+var egg_count_label;
+var score = 0;
+var score_label;
+var move_left = 10;
+var move_left_label;
+
+var size;
+
 var HelloWorldLayer = cc.Layer.extend({
     sprite:null,
     ctor:function () {
@@ -40,7 +50,7 @@ var HelloWorldLayer = cc.Layer.extend({
         // 2. add a menu item with "X" image, which is clicked to quit the program
         //    you may modify it.
         // ask the window size
-        var size = cc.winSize;
+        size = cc.winSize;
         layer_posX = size.width/2 - tileSize*fieldSize/2;
         layer_posY = size.height/2 - tileSize*fieldSize/2;
 
@@ -86,6 +96,31 @@ var HelloWorldLayer = cc.Layer.extend({
                 val: tileArray[0][i].val
             });
         }
+
+        // score & gold collection label
+        var egg_spite =  new cc.Sprite.create("res/egg.png");
+        egg_spite.setPosition(cc.p(size.width/2 + layer_posX/4, size.height/2 + layer_posY));
+        egg_spite.setScale(0.5);
+        globezLayer.addChild(egg_spite, 1);
+
+        egg_count_label = new cc.LabelTTF(current_gold_egg_number+"/"+need_gold_egg_number, "Arial", 40);
+        egg_count_label.x = size.width/2 + layer_posX/4 + tileSize;
+        egg_count_label.y = size.height / 2 + layer_posY;
+        globezLayer.addChild(egg_count_label, 1);
+
+        move_left_label = new cc.LabelTTF("Moves: "+ move_left, "Arial", 40);
+        move_left_label.x = size.width/2 + layer_posX/4;
+        move_left_label.y = size.height / 2 + layer_posY + tileSize;
+        //move_left_label.setColor(cc.color(255,0,0));
+        globezLayer.addChild(move_left_label, 1);
+
+        score_label = new cc.LabelTTF("Score: "+ score, "Arial", 40);
+        score_label.x = size.width/2 + layer_posX/4;
+        score_label.y = size.height / 2 + layer_posY - tileSize;
+        //score_label.setColor(cc.color(255,0,0));
+        globezLayer.addChild(score_label, 1);
+
+
 
         cc.eventManager.addListener(touchListener, this);
         touchListener.UpdateFunction();
@@ -189,6 +224,20 @@ var touchListener = cc.EventListener.create({
                     sprite.picked = false;
                     sprite.setScale(0.40);
                 }
+                else if(tempTile[i][j].val == "food"){
+                    sprite = cc.Sprite.createWithSpriteFrame("res/food.png");
+                    sprite.val = "food";
+                    sprite.power = "food";
+                    sprite.picked = false;
+                    sprite.setScale(0.50);
+                }
+                else if(tempTile[i][j].val == "coin"){
+                    sprite = cc.Sprite.createWithSpriteFrame("res/coin.png");
+                    sprite.val = "coin";
+                    sprite.power = "coin";
+                    sprite.picked = false;
+                    sprite.setScale(0.50);
+                }
                 else{
                     sprite = cc.Sprite.createWithSpriteFrame("res/candy.png" ,tileImage[tempTile[i][j].power][tempTile[i][j].val]);
                     sprite.val = tempTile[i][j].val;
@@ -196,6 +245,7 @@ var touchListener = cc.EventListener.create({
                     sprite.picked = false;
                     sprite.setScale(0.55);
                 }
+
                 globezLayer.addChild(sprite,1);
                 sprite.setPosition(j*tileSize+tileSize/2,i*tileSize+tileSize/2);
 
@@ -205,7 +255,6 @@ var touchListener = cc.EventListener.create({
                 tileArray[i][j] = sprite;
             }
         }
-
     },
 
     swapCandyAnimation: function(){
@@ -651,11 +700,34 @@ var touchListener = cc.EventListener.create({
     fallTile:function(row,col,height){
         if(gold_count == 50){
             gold_count = 0;
-            var sprite = cc.Sprite.createWithSpriteFrame("res/egg.png");
-            sprite.val = "egg";
-            sprite.power = "egg";
-            sprite.picked = false;
-            sprite.setScale(0.40);
+            var randomTile = Math.floor(Math.random()*3);
+            var sprite;
+            switch(randomTile){
+                case 0:
+                    sprite = cc.Sprite.createWithSpriteFrame("res/egg.png");
+                    sprite.val = "egg";
+                    sprite.power = "egg";
+                    sprite.picked = false;
+                    sprite.setScale(0.40);    
+                break;
+
+                case 1:
+                    sprite = cc.Sprite.createWithSpriteFrame("res/coin.png");
+                    sprite.val = "coin";
+                    sprite.power = "coin";
+                    sprite.picked = false;
+                    sprite.setScale(0.50);    
+                break;
+
+                case 2:
+                    sprite = cc.Sprite.createWithSpriteFrame("res/food.png");
+                    sprite.val = "food";
+                    sprite.power = "food";
+                    sprite.picked = false;
+                    sprite.setScale(0.50);    
+                break;
+            }
+            
             globezLayer.addChild(sprite,0);
             sprite.setPosition(col*tileSize+tileSize/2,(fieldSize+height)*tileSize);
             var moveAction = cc.MoveTo.create(0.75, new cc.Point(col*tileSize+tileSize/2,row*tileSize+tileSize/2));
@@ -710,6 +782,30 @@ var touchListener = cc.EventListener.create({
         for(var i=0; i<matchResultTile.length; i++){
             globezLayer.removeChild(tileArray[matchResultTile[i].row][matchResultTile[i].col]);
             tileArray[matchResultTile[i].row][matchResultTile[i].col]=null;
+        }
+
+        if(matchResultTile.length>5){
+            score += matchResultTile.length*200; 
+            score_label.setString("Score: "+ (score));
+        }
+        else{
+            score += matchResultTile.length*100; 
+            score_label.setString("Score: "+ (score));
+        }
+
+        // food coin collection
+        var dircFC = [[0,1], [1,0], [0,-1], [-1,0]];
+        for(var i=0; i<matchResultTile.length; i++){
+            for(var j=0; j<dircFC.length; j++){
+                if((matchResultTile[i].row + dircFC[j][0] >= 0 && matchResultTile[i].row + dircFC[j][0] < fieldSize) && (matchResultTile[i].col + dircFC[j][1] >= 0 && matchResultTile[i].col + dircFC[j][1] < fieldSize)){
+                    if(tileArray[matchResultTile[i].row + dircFC[j][0]][matchResultTile[i].col + dircFC[j][1]] !=  null){
+                        if (tileArray[matchResultTile[i].row + dircFC[j][0]][matchResultTile[i].col + dircFC[j][1]].val == "food" || tileArray[matchResultTile[i].row + dircFC[j][0]][matchResultTile[i].col + dircFC[j][1]].val == "coin"){
+                            globezLayer.removeChild(tileArray[matchResultTile[i].row + dircFC[j][0]][matchResultTile[i].col + dircFC[j][1]]);
+                            tileArray[matchResultTile[i].row + dircFC[j][0]][matchResultTile[i].col + dircFC[j][1]]=null;
+                        }            
+                    }
+                }
+            }
         }
 
         // create power tile
@@ -817,14 +913,33 @@ var touchListener = cc.EventListener.create({
         for(var i=0; i<fieldSize; i++)
             if(tileArray[0][i] != null)
                 if(tileArray[0][i].val == "egg"){
-                    // globezLayer.removeChild(tileArray[0][i]);
-                    // tileArray[0][i]=null;
                     gold_egg_collect.push({
                         row: 0,
                         col: i
                     });
                     egg = true;
                 }
+
+    if(gold_egg_collect.length>0){
+
+        score += 1000; 
+        score_label.setString("Score: "+ score);
+
+        current_gold_egg_number += gold_egg_collect.length;
+        egg_count_label.setString(current_gold_egg_number+"/"+need_gold_egg_number);
+    
+        var dd = new cc.LabelTTF("+"+gold_egg_collect.length, "Arial", 40);
+        dd.x = size.width/2 + layer_posX/4 + tileSize;
+        dd.y = size.height / 2 + layer_posY;
+        dd.setColor(cc.color(255,0,0));
+        globezLayer.addChild(dd, 1);
+    
+        var action = new cc.FadeOut.create(1.5);
+        var actionIn = new cc.ScaleTo.create(1.5,1.5,1.5);
+        var seq = new cc.Sequence.create(actionIn, action);
+        dd.runAction(seq);
+    }
+
         return egg;
     },
 
@@ -844,15 +959,20 @@ var touchListener = cc.EventListener.create({
         }
         else {
             //checkCollisionTile = [];
+            if(move_left == 0){
+                cc.log("Game End");
+                var scene = new HelloWorldScene2;
+                cc.director.pushScene(scene);
+            }
             play = true;
 
             if(this.IsShuffelNeed()){
                 cc.log("Shuffel Need");
                 this.doShuffel();
-                //this.UpdateFunction();
+                this.UpdateFunction();
             }
-            else
-                cc.log("Shuffel NOT Need");
+            // else
+            //     cc.log("Shuffel NOT Need");
         }
         return 0;        
     },
@@ -890,6 +1010,8 @@ var touchListener = cc.EventListener.create({
                     if(resultFlag)
                         that.swapCandyAnimation();
                     else{
+                        move_left--;
+                        move_left_label.setString("Moves: "+move_left);
                         // New tile create after remove
                         that.fallTileCreate(); // 0.75 second   
                         setTimeout(function(){
